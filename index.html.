@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker Intelligente</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    input, button {
+      font-size: 1rem;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    input {
+      flex: 1;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .task {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .low { background: #bbf7d0; }
+    .medium { background: #fef08a; }
+    .high { background: #fecaca; }
+  </style>
+</head>
+<body>
+  <h1>🧠 Task Tracker Intelligente</h1>
+  <div style="display:flex;gap:0.5rem;width:100%;max-width:480px;">
+    <input id="taskInput" type="text" placeholder="Es: inviare report urgente domani">
+    <button onclick="addTask()">Aggiungi</button>
+  </div>
+  <div style="margin-top:0.5rem;width:100%;max-width:480px;text-align:right;">
+    <button style="background:#6b7280" onclick="sortTasks()">Ordina per priorità</button>
+  </div>
+  <div id="taskList" style="width:100%;max-width:480px;margin-top:1rem;"></div>
+
+  <script>
+    const tasks = [];
+
+    function analyzeTask(text) {
+      const urgencyWords = [/oggi/i, /domani/i, /urgente/i, /scadenza/i];
+      const impactWords = [/cliente/i, /report/i, /presentazione/i, /importante/i, /capo/i];
+      const lowEffortWords = [/veloce/i, /piccolo/i, /breve/i];
+      const highEffortWords = [/lungo/i, /complicato/i, /ore/i, /giorni/i];
+
+      const score = (patterns) => patterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+
+      const urgency = Math.min(3, Math.max(1, score(urgencyWords)));
+      const impact = Math.min(3, Math.max(1, score(impactWords)));
+      const low = score(lowEffortWords);
+      const high = score(highEffortWords);
+      const effort = high > 0 && low === 0 ? 3 : low > 0 && high === 0 ? 1 : 2;
+
+      let priority = Math.round((impact * urgency) / effort);
+      if (/urgente|scadenza/i.test(text)) priority++;
+      return Math.min(5, Math.max(1, priority));
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const priority = analyzeTask(text);
+      const task = { text, priority };
+      tasks.push(task);
+      input.value = '';
+      renderTasks();
+    }
+
+    function removeTask(index) {
+      tasks.splice(index, 1);
+      renderTasks();
+    }
+
+    function sortTasks() {
+      tasks.sort((a, b) => b.priority - a.priority);
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('taskList');
+      container.innerHTML = '';
+      tasks.forEach((t, i) => {
+        const div = document.createElement('div');
+        let color = t.priority >= 4 ? 'high' : t.priority === 3 ? 'medium' : 'low';
+        div.className = `task ${color}`;
+        div.innerHTML = `
+          <span>${t.text}</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <strong>${t.priority}</strong>
+            <button style="background:#dc2626" onclick="removeTask(${i})">🗑</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
